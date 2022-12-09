@@ -1,5 +1,18 @@
 # The main reason we import core by default...
 (import)
-(read parse eval)
+(".lion" + read parse eval)
 def
 
+# List operations
+(append) 
+(() cons cat) 
+def
+
+(prepend) 
+(swap cons) 
+def
+
+# Other random stuff
+(println)
+(print "\n" print)
+def

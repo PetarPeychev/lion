@@ -1,6 +1,5 @@
 from __future__ import annotations
 from dataclasses import dataclass
-import functools as func
 
 
 @dataclass
@@ -59,4 +58,4 @@ class Quote:
         return hash(self.val)
 
 
-Word = Number | String | Symbol | Quote
+Word = Number | String | Boolean | Symbol | Quote

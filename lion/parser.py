@@ -19,6 +19,14 @@ def remove_comments(string):
     return regex.sub(_replacer, string)
 
 
+def is_number(string: str):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
+
+
 def parse(code: str) -> Quote:
     no_comments = remove_comments(code)
     tokens = re.findall(r'(?:[^\s"]+|"(?:[^"])*")', no_comments)
@@ -71,11 +79,3 @@ def parse(code: str) -> Quote:
                 quoted[level].append(symbol)
 
     return Quote(tokens_parsed)
-
-
-def is_number(string: str):
-    try:
-        float(string)
-        return True
-    except ValueError:
-        return False

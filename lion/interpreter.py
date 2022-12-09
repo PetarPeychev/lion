@@ -15,15 +15,15 @@ class Interpreter:
             Symbol("cat"): builtins.l_cat,
             Symbol("cons"): builtins.l_cons,
             Symbol("uncons"): builtins.l_uncons,
-            
             Symbol("def"): builtins.l_def,
             Symbol("parse"): builtins.l_parse,
             Symbol("type"): builtins.l_type,
-            
+            Symbol("string"): builtins.l_string,
+            Symbol("number"): builtins.l_number,
+            Symbol("symbol"): builtins.l_symbol,
             Symbol("print"): builtins.l_print,
             Symbol("read"): builtins.l_read,
             Symbol("write"): builtins.l_write,
-            
             Symbol("+"): builtins.l_add,
             Symbol("-"): builtins.l_subtract,
             Symbol("*"): builtins.l_multiply,

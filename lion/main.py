@@ -31,11 +31,11 @@ def repl(interpreter: Interpreter) -> None:
             previous_stack = deepcopy(interpreter.stack)
             previous_vocabulary = deepcopy(interpreter.vocabulary)
             interpreter.evaluate(quote)
-            print(interpreter.stack)
         except Exception as e:
             interpreter.stack = previous_stack
             interpreter.vocabulary = previous_vocabulary
             print(f"Error: {e}")
+        print(interpreter.stack)
 
 
 def interpret_file(interpreter: Interpreter, filename: str) -> None:
