@@ -16,3 +16,11 @@ def
 (println)
 (print "\n" print)
 def
+
+(printall) 
+(
+    dup () eq (drop) 
+    (uncons swap string println printall) 
+    ifte
+) 
+def

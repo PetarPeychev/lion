@@ -28,6 +28,13 @@ class Interpreter:
             Symbol("-"): builtins.l_subtract,
             Symbol("*"): builtins.l_multiply,
             Symbol("/"): builtins.l_divide,
+            Symbol("split"): builtins.l_split,
+            Symbol("join"): builtins.l_join,
+            Symbol("ifte"): builtins.l_ifte,
+            Symbol("and"): builtins.l_and,
+            Symbol("or"): builtins.l_or,
+            Symbol("not"): builtins.l_not,
+            Symbol("eq"): builtins.l_eq,
         }
         self.vocabulary = {}
 

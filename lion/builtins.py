@@ -144,3 +144,47 @@ def l_divide(i) -> None:
     num_first = take_type(i, Number)
     num_second = take_type(i, Number)
     i.stack.append(Number(num_second.val / num_first.val))
+
+
+# Strings
+def l_split(i) -> None:
+    string: String = take_type(i, String)
+    quote = Quote([String(s) for s in string.val])
+    i.stack.append(quote)
+
+
+def l_join(i) -> None:
+    quote: Quote = take_type(i, Quote)
+    string = String("".join([x.val for x in quote.val]))
+    i.stack.append(string)
+
+
+# Logical Operators
+def l_ifte(i) -> None:
+    quote_else: Quote = take_type(i, Quote)
+    quote_then: Quote = take_type(i, Quote)
+    boolean: Boolean = take_type(i, Boolean)
+
+    if boolean.val:
+        i.evaluate(quote_then)
+    else:
+        i.evaluate(quote_else)
+
+def l_and(i) -> None:
+    boolean1: Boolean = take_type(i, Boolean)
+    boolean2: Boolean = take_type(i, Boolean)
+    i.stack.append(Boolean(boolean2.val and boolean1.val))
+
+def l_or(i) -> None:
+    boolean1: Boolean = take_type(i, Boolean)
+    boolean2: Boolean = take_type(i, Boolean)
+    i.stack.append(Boolean(boolean2.val or boolean1.val))
+    
+def l_not(i) -> None:
+    boolean: Boolean = take_type(i, Boolean)
+    i.stack.append(Boolean(not boolean.val))
+
+def l_eq(i) -> None:
+    word1: Word = take_type(i, Word)
+    word2: Word = take_type(i, Word)
+    i.stack.append(Boolean(word2 == word1))
