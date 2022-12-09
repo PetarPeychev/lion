@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from lion.words import Word, String, Quote, Symbol
+from lion.words import Word, String, Quote, Symbol, Number, Boolean
 from lion.parser import parse
 
 # Utility Functions (Not in Builtins)
@@ -57,6 +57,15 @@ def l_cons(i) -> None:
     word = take_type(i, Word)
     i.stack.append(Quote([word] + quote.val))
 
+def l_uncons(i) -> None:
+    quote = take_type(i, Quote)
+    
+    if len(quote.val) > 0:
+        i.stack.append(quote.val[0])
+        i.stack.append(Quote(quote.val[1:]))
+    else:
+        i.error("attempted uncons on empty quote")
+
 
 # Input/Output
 def l_print(i) -> None:
@@ -89,3 +98,28 @@ def l_def(i) -> None:
         i.vocabulary[name.val[0]] = quote
     else:
         i.error("word for new vocabulary entry must be a Symbol")
+
+def l_type(i) -> None:
+    word = take_type(i, Word)
+    i.stack.append(String(word.__class__.__name__))
+
+# Math
+def l_add(i) -> None:
+    num_first = take_type(i, Number)
+    num_second = take_type(i, Number)
+    i.stack.append(num_second + num_first)
+
+def l_subtract(i) -> None:
+    num_first = take_type(i, Number)
+    num_second = take_type(i, Number)
+    i.stack.append(num_second - num_first)
+
+def l_multiply(i) -> None:
+    num_first = take_type(i, Number)
+    num_second = take_type(i, Number)
+    i.stack.append(num_second * num_first)
+
+def l_divide(i) -> None:
+    num_first = take_type(i, Number)
+    num_second = take_type(i, Number)
+    i.stack.append(num_second / num_first)

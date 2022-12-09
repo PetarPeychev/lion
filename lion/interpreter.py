@@ -6,7 +6,6 @@ class Interpreter:
     def __init__(self):
         self.stack = []
         self.builtins = {
-            Symbol("def"): builtins.l_def,
             Symbol("dup"): builtins.l_dup,
             Symbol("drop"): builtins.l_drop,
             Symbol("swap"): builtins.l_swap,
@@ -15,10 +14,20 @@ class Interpreter:
             Symbol("quote"): builtins.l_quote,
             Symbol("cat"): builtins.l_cat,
             Symbol("cons"): builtins.l_cons,
+            Symbol("uncons"): builtins.l_uncons,
+            
+            Symbol("def"): builtins.l_def,
+            Symbol("parse"): builtins.l_parse,
+            Symbol("type"): builtins.l_type,
+            
             Symbol("print"): builtins.l_print,
             Symbol("read"): builtins.l_read,
             Symbol("write"): builtins.l_write,
-            Symbol("parse"): builtins.l_parse,
+            
+            Symbol("+"): builtins.l_add,
+            Symbol("-"): builtins.l_subtract,
+            Symbol("*"): builtins.l_multiply,
+            Symbol("/"): builtins.l_divide,
         }
         self.vocabulary = {}
 
