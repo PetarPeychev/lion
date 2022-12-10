@@ -11,7 +11,7 @@ def main() -> None:
     args = sys.argv[1:]
 
     interpreter = Interpreter()
-    interpret_file(interpreter, "core.lion")
+    interpret_file(interpreter, "core/core.lion")
 
     if len(args) == 0:
         repl(interpreter)

@@ -170,19 +170,23 @@ def l_ifte(i) -> None:
     else:
         i.evaluate(quote_else)
 
+
 def l_and(i) -> None:
     boolean1: Boolean = take_type(i, Boolean)
     boolean2: Boolean = take_type(i, Boolean)
     i.stack.append(Boolean(boolean2.val and boolean1.val))
 
+
 def l_or(i) -> None:
     boolean1: Boolean = take_type(i, Boolean)
     boolean2: Boolean = take_type(i, Boolean)
     i.stack.append(Boolean(boolean2.val or boolean1.val))
-    
+
+
 def l_not(i) -> None:
     boolean: Boolean = take_type(i, Boolean)
     i.stack.append(Boolean(not boolean.val))
+
 
 def l_eq(i) -> None:
     word1: Word = take_type(i, Word)

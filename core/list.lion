@@ -1,0 +1,10 @@
+# append :: Quote Word -> Quote
+(append)
+(quote cat)
+def
+
+
+# prepend :: Quote Word -> Quote
+(prepend)
+(swap cons)
+def

@@ -1,0 +1,16 @@
+(pi)
+(3.14)
+def
+
+(square)
+(dup *)
+def
+
+
+(square)
+"my docs"
+docs
+
+(square_docs)
+("my docs")
+def
