@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from lion.words import Symbol, Quote
 from lion import builtins
 
@@ -6,10 +8,6 @@ class Interpreter:
     def __init__(self):
         self.stack = []
         self.builtins = {
-            Symbol("dup"): builtins.l_dup,
-            Symbol("drop"): builtins.l_drop,
-            Symbol("swap"): builtins.l_swap,
-            Symbol("dip"): builtins.l_dip,
             Symbol("eval"): builtins.l_eval,
             Symbol("quote"): builtins.l_quote,
             Symbol("cat"): builtins.l_cat,
@@ -34,22 +32,21 @@ class Interpreter:
             Symbol("and"): builtins.l_and,
             Symbol("or"): builtins.l_or,
             Symbol("not"): builtins.l_not,
-            Symbol("eq"): builtins.l_eq,
+            Symbol("eq?"): builtins.l_eq,
         }
-        self.vocabulary = {}
 
     def error(self, msg: str) -> None:
         raise RuntimeError(msg)
 
-    def evaluate(self, quote: Quote) -> None:
+    def evaluate(self, quote: Quote, vocabulary: dict[Symbol, Quote]) -> None:
         if not isinstance(quote, Quote):
             self.error(f"can't evaluate a word of type {type(quote)}")
         for word in quote.val:
             if isinstance(word, Symbol):
                 if word in self.builtins:
-                    self.builtins[word](self)
-                elif word in self.vocabulary:
-                    self.evaluate(self.vocabulary[word])
+                    self.builtins[word](self, vocabulary)
+                elif word in vocabulary:
+                    self.evaluate(vocabulary[word], deepcopy(vocabulary))
                 else:
                     self.error(f"unrecognised word {word}")
             else:

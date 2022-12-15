@@ -11,15 +11,16 @@ def main() -> None:
     args = sys.argv[1:]
 
     interpreter = Interpreter()
-    interpret_file(interpreter, "core/core.lion")
+    vocabulary = {}
+    interpret_file(interpreter, "core/core.lion", vocabulary)
 
     if len(args) == 0:
-        repl(interpreter)
+        repl(interpreter, vocabulary)
     elif len(args) == 1:
         interpret_file(interpreter, args[0])
 
 
-def repl(interpreter: Interpreter) -> None:
+def repl(interpreter: Interpreter, vocabulary: dict) -> None:
     print("Lion 1.0.0:")
 
     previous_stack = []
@@ -29,19 +30,19 @@ def repl(interpreter: Interpreter) -> None:
         try:
             quote = parse(code)
             previous_stack = deepcopy(interpreter.stack)
-            previous_vocabulary = deepcopy(interpreter.vocabulary)
-            interpreter.evaluate(quote)
+            previous_vocabulary = deepcopy(vocabulary)
+            interpreter.evaluate(quote, vocabulary)
         except Exception as e:
             interpreter.stack = previous_stack
-            interpreter.vocabulary = previous_vocabulary
+            vocabulary = previous_vocabulary
             print(f"Error: {e}")
         print(interpreter.stack)
 
 
-def interpret_file(interpreter: Interpreter, filename: str) -> None:
+def interpret_file(interpreter: Interpreter, filename: str, vocabulary: dict) -> None:
     try:
         code = Path(filename).read_text()
         quote = parse(code)
-        interpreter.evaluate(quote)
+        interpreter.evaluate(quote, vocabulary)
     except Exception as e:
         print(f"Error: {e}")

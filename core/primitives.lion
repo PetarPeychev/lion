@@ -1,0 +1,26 @@
+(dup)
+(
+    (x) def
+    x
+    x
+) def
+
+(drop)
+(
+    (x) def
+) def
+
+(swap)
+(
+    (x) def
+    (y) def
+) def
+
+(dip)
+(
+    (f) def
+    (x) def
+    f eval
+    x
+) def
+
