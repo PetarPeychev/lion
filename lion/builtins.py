@@ -12,51 +12,31 @@ def take_type(i, types: tuple[Word]) -> Word:
         i.error(f"expected word of type {types}")
 
 
-# Concatenative Combinators (http://tunes.org/~iepos/joy.html)
-def l_dup(i, v) -> None:
-    word = take_type(i, Word)
-    i.stack.append(word)
-    i.stack.append(word)
-
-
-def l_drop(i, v) -> None:
-    take_type(i, Word)
-
-
-def l_swap(i, v) -> None:
-    first = take_type(i, Word)
-    second = take_type(i, Word)
-    i.stack.append(first)
-    i.stack.append(second)
-
-
-def l_dip(i, v) -> None:
-    quote = take_type(i, Quote)
-    top = take_type(i, Word)
-    i.evaluate(quote, deepcopy(v))
-    i.stack.append(top)
-
-
-def l_eval(i, v) -> None:
+def l_call(i, v) -> None:
     quote = take_type(i, Quote)
     i.evaluate(quote, deepcopy(v))
 
 
-def l_quote(i, v) -> None:
+def l_run(i, v) -> None:
+    quote = take_type(i, Quote)
+    i.evaluate(quote, v)
+
+
+def l_wrap(i, v) -> None:
     word = take_type(i, Word)
     i.stack.append(Quote([word]))
+
+
+def l_unwrap(i, v) -> None:
+    quote = take_type(i, Quote)
+    for word in quote.val:
+        i.stack.append(word)
 
 
 def l_cat(i, v) -> None:
     quote_first: Quote = take_type(i, Quote)
     quote_second: Quote = take_type(i, Quote)
     i.stack.append(Quote(quote_second.val + quote_first.val))
-
-
-def l_cons(i, v) -> None:
-    quote: Quote = take_type(i, Quote)
-    word = take_type(i, Word)
-    i.stack.append(Quote([word] + quote.val))
 
 
 def l_uncons(i, v) -> None:
@@ -92,21 +72,33 @@ def l_parse(i, v) -> None:
     i.stack.append(parse(string.val))
 
 
-def l_def(i, v) -> None:
+def l_defun(i, v) -> None:
     name = take_type(i, Quote)
     quote = take_type(i, Quote)
 
     if len(name.val) == 1 and isinstance(name.val[0], Symbol):
         if name.val[0] in v:
             i.error(f"definition for {str(name.val[0])} already exists")
-        v[name.val[0]] = quote
+        v[name.val[0]] = (True, quote)
+    else:
+        i.error("word for new vocabulary entry must be a Symbol")
+
+
+def l_defmacro(i, v) -> None:
+    name = take_type(i, Quote)
+    quote = take_type(i, Quote)
+
+    if len(name.val) == 1 and isinstance(name.val[0], Symbol):
+        if name.val[0] in v:
+            i.error(f"definition for {str(name.val[0])} already exists")
+        v[name.val[0]] = (False, quote)
     else:
         i.error("word for new vocabulary entry must be a Symbol")
 
 
 def l_type(i, v) -> None:
     word = take_type(i, Word)
-    i.stack.append(String(word.__class__.__name__))
+    i.stack.append(String(word.typename))
 
 
 def l_string(i, v) -> None:

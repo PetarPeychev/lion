@@ -1,97 +1,11 @@
+# Loads and evaluates a module from a relative path.
+#
+# Input:
+#   path: str
+#
+# Output:
+#   None
 (
-    (uncons swap) dip eval swap cons
+    read parse run
 )
-(_apply) def
-
-
-(
-    (dup () eq?) dip swap
-    (drop drop)
-    ((() swap uncons (quote cat) dip) dip swap (dup (_apply cat) dip) dip swap _map)
-    ifte
-)
-(_map) def
-
-
-(
-    (docstr) swap quote def
-    (qsymbol) swap quote def
-    qsymbol
-    qsymbol (string) _apply ("_docs") cat join symbol quote
-    docstr quote
-)
-(docs) def
-
-
-(docs)
-"Adds a docs entry in the vocabulary for a quoted word.
-    (Symbol) -> _
-    word     -> _" docs def drop
-
-
-(
-    () eq?
-)
-(empty?)
-"Check whether a quote is empty.
-    Quote -> Boolean
-    quote -> is_empty?" docs def
-def
-
-
-(foreach)
-"Apply a quote to each word in another quote.
-    (a b c...) (f) -> a f b f c f..." docs def
-(
-    (dup empty?) dip swap
-    (drop drop)
-    ((uncons) dip dup (swap (eval) dip) dip foreach) # fa [b c] f
-    ifte
-) def
-
-
-# map :: Quote Quote -> Quote
-# apply a quote to each word in another quote,
-# returning a quote with the same size
-(map)
-"" docs def
-(
-    (dup empty?) dip swap
-    (drop)
-    ((() swap uncons (quote cat) dip) dip swap (dup (_apply) dip) dip swap _map)
-    ifte
-) def
-
-
-(help)
-"Displays the docs for a quoted word.
-    (Symbol) -> _
-    word     -> _" docs def
-(
-    (string) map "_docs" quote cat join symbol quote eval println
-) def
-
-
-# import :: String ->
-(import)
-"Loads and evaluates a module.
-    String -> _
-    path -> _ " docs def
-(
-    ".lion" + read parse eval
-) def
-
-
-# println :: String ->
-(println)
-(print "\n" print)
-def
-
-
-(printall)
-(
-    dup empty? (drop)
-    (uncons swap string println printall)
-    ifte
-)
-def
+(import) defmacro

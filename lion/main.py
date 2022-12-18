@@ -17,7 +17,7 @@ def main() -> None:
     if len(args) == 0:
         repl(interpreter, vocabulary)
     elif len(args) == 1:
-        interpret_file(interpreter, args[0])
+        interpret_file(interpreter, args[0], vocabulary)
 
 
 def repl(interpreter: Interpreter, vocabulary: dict) -> None:

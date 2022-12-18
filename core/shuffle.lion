@@ -1,0 +1,31 @@
+(
+    wrap (x) defmacro
+
+    x x
+)
+(dup) defun
+
+
+(
+    wrap (x) defmacro
+)
+(drop) defun
+
+
+(
+    wrap (y) defmacro
+    wrap (x) defmacro
+
+    y x
+)
+(swap) defun
+
+
+(
+    wrap (f) defmacro
+    wrap (x) defmacro
+
+    f eval
+    x
+)
+(dip) defun

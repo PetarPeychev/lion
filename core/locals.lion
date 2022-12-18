@@ -1,0 +1,64 @@
+(
+    wrap (a) defmacro
+)
+(->a) defmacro
+
+
+(
+    wrap (b) defmacro
+)
+(->b) defmacro
+
+
+(
+    wrap (c) defmacro
+)
+(->c) defmacro
+
+
+(
+    wrap (d) defmacro
+)
+(->d) defmacro
+
+
+(
+    wrap (e) defmacro
+)
+(->e) defmacro
+
+
+(
+    wrap (f) defmacro
+)
+(->f) defmacro
+
+
+(
+    wrap (g) defmacro
+)
+(->g) defmacro
+
+
+(
+    wrap (h) defmacro
+)
+(->h) defmacro
+
+
+(
+    wrap (x) defmacro
+)
+(->x) defmacro
+
+
+(
+    wrap (y) defmacro
+)
+(->y) defmacro
+
+
+(
+    wrap (z) defmacro
+)
+(->z) defmacro

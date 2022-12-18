@@ -1,0 +1,53 @@
+(
+    true eq?
+)
+(true?) defmacro
+
+
+(
+    false eq?
+)
+(false?) defmacro
+
+
+(
+    true?
+    (false)
+    (true)
+    ifte
+)
+(not) defmacro
+
+
+(
+    wrap (a) defmacro
+    wrap (b) defmacro
+
+    a true?
+    (
+        b true?
+        (true)
+        (false)
+        ifte
+    )
+    (false)
+    ifte
+)
+(and) defun
+
+
+(
+    wrap (a) defmacro
+    wrap (b) defmacro
+
+    a true?
+    (true)
+    (
+        b true?
+        (true)
+        (false)
+        ifte
+    )
+    ifte
+)
+(or) defun

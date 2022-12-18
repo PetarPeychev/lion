@@ -8,12 +8,14 @@ class Interpreter:
     def __init__(self):
         self.stack = []
         self.builtins = {
-            Symbol("eval"): builtins.l_eval,
-            Symbol("quote"): builtins.l_quote,
+            Symbol("call"): builtins.l_call,
+            Symbol("run"): builtins.l_run,
+            Symbol("wrap"): builtins.l_wrap,
+            Symbol("unwrap"): builtins.l_unwrap,
             Symbol("cat"): builtins.l_cat,
-            Symbol("cons"): builtins.l_cons,
             Symbol("uncons"): builtins.l_uncons,
-            Symbol("def"): builtins.l_def,
+            Symbol("defun"): builtins.l_defun,
+            Symbol("defmacro"): builtins.l_defmacro,
             Symbol("parse"): builtins.l_parse,
             Symbol("type"): builtins.l_type,
             Symbol("string"): builtins.l_string,
@@ -29,16 +31,15 @@ class Interpreter:
             Symbol("split"): builtins.l_split,
             Symbol("join"): builtins.l_join,
             Symbol("ifte"): builtins.l_ifte,
-            Symbol("and"): builtins.l_and,
-            Symbol("or"): builtins.l_or,
-            Symbol("not"): builtins.l_not,
             Symbol("eq?"): builtins.l_eq,
         }
 
     def error(self, msg: str) -> None:
         raise RuntimeError(msg)
 
-    def evaluate(self, quote: Quote, vocabulary: dict[Symbol, Quote]) -> None:
+    def evaluate(
+        self, quote: Quote, vocabulary: dict[Symbol, tuple[bool, Quote]]
+    ) -> None:
         if not isinstance(quote, Quote):
             self.error(f"can't evaluate a word of type {type(quote)}")
         for word in quote.val:
@@ -46,7 +47,10 @@ class Interpreter:
                 if word in self.builtins:
                     self.builtins[word](self, vocabulary)
                 elif word in vocabulary:
-                    self.evaluate(vocabulary[word], deepcopy(vocabulary))
+                    if vocabulary[word][0]:
+                        self.evaluate(vocabulary[word][1], deepcopy(vocabulary))
+                    else:
+                        self.evaluate(vocabulary[word][1], vocabulary)
                 else:
                     self.error(f"unrecognised word {word}")
             else:
