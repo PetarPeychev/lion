@@ -1,13 +1,13 @@
 (
     true eq?
 )
-(true?) defmacro
+(true?) defm
 
 
 (
     false eq?
 )
-(false?) defmacro
+(false?) defm
 
 
 (
@@ -16,12 +16,12 @@
     (true)
     ifte
 )
-(not) defmacro
+(not) defm
 
 
 (
-    wrap (a) defmacro
-    wrap (b) defmacro
+    wrap (a) defm
+    wrap (b) defm
 
     a true?
     (
@@ -33,12 +33,12 @@
     (false)
     ifte
 )
-(and) defun
+(and) def
 
 
 (
-    wrap (a) defmacro
-    wrap (b) defmacro
+    wrap (a) defm
+    wrap (b) defm
 
     a true?
     (true)
@@ -50,4 +50,4 @@
     )
     ifte
 )
-(or) defun
+(or) def

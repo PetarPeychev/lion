@@ -8,13 +8,14 @@ class Interpreter:
     def __init__(self):
         self.stack = []
         self.builtins = {
+            Symbol("error"): builtins.l_error,
             Symbol("call"): builtins.l_call,
             Symbol("run"): builtins.l_run,
             Symbol("wrap"): builtins.l_wrap,
             Symbol("unwrap"): builtins.l_unwrap,
             Symbol("uncons"): builtins.l_uncons,
-            Symbol("defun"): builtins.l_defun,
-            Symbol("defmacro"): builtins.l_defmacro,
+            Symbol("def"): builtins.l_def,
+            Symbol("defm"): builtins.l_defm,
             Symbol("parse"): builtins.l_parse,
             Symbol("type"): builtins.l_type,
             Symbol("str"): builtins.l_string,
@@ -34,6 +35,7 @@ class Interpreter:
         }
 
     def error(self, msg: str) -> None:
+        print(self.stack)
         raise RuntimeError(msg)
 
     def evaluate(

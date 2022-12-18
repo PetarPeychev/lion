@@ -9,7 +9,14 @@ def take_type(i, types: tuple[Word]) -> Word:
     if len(i.stack) > 0 and isinstance(i.stack[-1], types):
         return i.stack.pop()
     else:
-        i.error(f"expected word of type {types}")
+        if not isinstance(types, tuple):
+            types = [types]
+        i.error(f"expected word of type {[t.typename for t in types]}")
+
+
+def l_error(i, v) -> None:
+    msg = take_type(i, String)
+    i.error(msg.val)
 
 
 def l_call(i, v) -> None:
@@ -66,7 +73,7 @@ def l_parse(i, v) -> None:
     i.stack.append(parse(string.val))
 
 
-def l_defun(i, v) -> None:
+def l_def(i, v) -> None:
     name = take_type(i, Quote)
     quote = take_type(i, Quote)
 
@@ -78,7 +85,7 @@ def l_defun(i, v) -> None:
         i.error("word for new vocabulary entry must be a Symbol")
 
 
-def l_defmacro(i, v) -> None:
+def l_defm(i, v) -> None:
     name = take_type(i, Quote)
     quote = take_type(i, Quote)
 
@@ -117,11 +124,13 @@ def l_add(i, v) -> None:
         i.stack.append(Quote(word_second.val + word_first.val))
     elif isinstance(word_first, String) and isinstance(word_second, String):
         i.stack.append(String(word_second.val + word_first.val))
+    elif isinstance(word_first, Symbol) and isinstance(word_second, Symbol):
+        i.stack.append(Symbol(word_second.val + word_first.val))
     elif isinstance(word_first, String) and isinstance(word_second, String):
         i.stack.append(Number(word_second.val + word_first.val))
     else:
         i.error(
-            f"""expected two words of type block, \
+            f"""expected two words of type block, sym, \
                 str or num, not {word_second.typename} and {word_first.typename}"""
         )
 

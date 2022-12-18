@@ -1,64 +1,64 @@
 (
-    wrap (a) defmacro
+    wrap (a) defm
 )
-(->a) defmacro
+(->a) defm
 
 
 (
-    wrap (b) defmacro
+    wrap (b) defm
 )
-(->b) defmacro
+(->b) defm
 
 
 (
-    wrap (c) defmacro
+    wrap (c) defm
 )
-(->c) defmacro
+(->c) defm
 
 
 (
-    wrap (d) defmacro
+    wrap (d) defm
 )
-(->d) defmacro
+(->d) defm
 
 
 (
-    wrap (e) defmacro
+    wrap (e) defm
 )
-(->e) defmacro
+(->e) defm
 
 
 (
-    wrap (f) defmacro
+    wrap (f) defm
 )
-(->f) defmacro
+(->f) defm
 
 
 (
-    wrap (g) defmacro
+    wrap (g) defm
 )
-(->g) defmacro
+(->g) defm
 
 
 (
-    wrap (h) defmacro
+    wrap (h) defm
 )
-(->h) defmacro
+(->h) defm
 
 
 (
-    wrap (x) defmacro
+    wrap (x) defm
 )
-(->x) defmacro
+(->x) defm
 
 
 (
-    wrap (y) defmacro
+    wrap (y) defm
 )
-(->y) defmacro
+(->y) defm
 
 
 (
-    wrap (z) defmacro
+    wrap (z) defm
 )
-(->z) defmacro
+(->z) defm

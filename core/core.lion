@@ -1,11 +1,62 @@
-# Loads and evaluates a module from a relative path.
-#
-# Input:
-#   path: str
-#
-# Output:
-#   None
 (
-    read parse run
+    (
+        wrap (docstr) defm
+        wrap (name) defm
+
+        docstr wrap
+        name unwrap (_docs) unwrap + wrap
+    )
+    call defm
+) (docs) defm
+("Define a docstring for a symbol.
+    docstr::str name::block ->")
+(docs_docs) defm
+
+
+(
+    (
+        wrap (block) defm
+        wrap (docstr) defm
+        wrap (name) defm
+
+        block name name docstr
+    )
+    call docs defm
+) (docdefm) defm
+("Define a docstring for a symbol.
+    docstr::str name::block ->")
+(docdefm_docs) defm
+
+
+(docdef)
+"Define a docstring for a symbol.
+    docstr::str name::block ->"
+(
+    (
+        wrap (block) defm
+        wrap (docstr) defm
+        wrap (name) defm
+
+        block name name docstr
+    )
+    call docs def
 )
-(import) defmacro
+docdefm
+
+
+(import)
+"Imports an external module from a relative path.
+    path::str ->"
+(
+    ".lion" + read parse run
+)
+docdefm
+
+
+(help)
+"Displays the docs for a wrapped symbol.
+    name::block ->"
+(
+    unwrap (_docs) unwrap + wrap run print "\n" print
+)
+docdefm
