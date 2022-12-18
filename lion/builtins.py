@@ -33,12 +33,6 @@ def l_unwrap(i, v) -> None:
         i.stack.append(word)
 
 
-def l_cat(i, v) -> None:
-    quote_first: Quote = take_type(i, Quote)
-    quote_second: Quote = take_type(i, Quote)
-    i.stack.append(Quote(quote_second.val + quote_first.val))
-
-
 def l_uncons(i, v) -> None:
     quote = take_type(i, Quote)
 
@@ -116,11 +110,20 @@ def l_symbol(i, v) -> None:
     i.stack.append(Symbol(string.val))
 
 
-# Math
 def l_add(i, v) -> None:
-    num_first = take_type(i, Number)
-    num_second = take_type(i, Number)
-    i.stack.append(Number(num_second.val + num_first.val))
+    word_first: Word = take_type(i, Word)
+    word_second: Word = take_type(i, Word)
+    if isinstance(word_first, Quote) and isinstance(word_second, Quote):
+        i.stack.append(Quote(word_second.val + word_first.val))
+    elif isinstance(word_first, String) and isinstance(word_second, String):
+        i.stack.append(String(word_second.val + word_first.val))
+    elif isinstance(word_first, String) and isinstance(word_second, String):
+        i.stack.append(Number(word_second.val + word_first.val))
+    else:
+        i.error(
+            f"""expected two words of type block, \
+                str or num, not {word_second.typename} and {word_first.typename}"""
+        )
 
 
 def l_subtract(i, v) -> None:
@@ -164,23 +167,6 @@ def l_ifte(i, v) -> None:
         i.evaluate(quote_then, deepcopy(v))
     else:
         i.evaluate(quote_else, deepcopy(v))
-
-
-def l_and(i, v) -> None:
-    boolean1: Boolean = take_type(i, Boolean)
-    boolean2: Boolean = take_type(i, Boolean)
-    i.stack.append(Boolean(boolean2.val and boolean1.val))
-
-
-def l_or(i, v) -> None:
-    boolean1: Boolean = take_type(i, Boolean)
-    boolean2: Boolean = take_type(i, Boolean)
-    i.stack.append(Boolean(boolean2.val or boolean1.val))
-
-
-def l_not(i, v) -> None:
-    boolean: Boolean = take_type(i, Boolean)
-    i.stack.append(Boolean(not boolean.val))
 
 
 def l_eq(i, v) -> None:

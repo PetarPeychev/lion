@@ -41,7 +41,7 @@ class Boolean:
 @dataclass
 class Symbol:
     val: str
-    typename = "symb"
+    typename = "sym"
 
     def __repr__(self) -> str:
         return self.val
