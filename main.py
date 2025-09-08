@@ -24,6 +24,17 @@ class Symbol(str):
         return self.__str__()
 
 
+class String:
+    def __init__(self, value: str):
+        self.value = value
+
+    def __str__(self) -> str:
+        return f'"{self.value}"'
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
 class List(list["Value"]):
     def __str__(self) -> str:
         return "[" + " ".join(map(str, self)) + "]"
@@ -32,7 +43,7 @@ class List(list["Value"]):
         return self.__str__()
 
 
-type Value = Number | Symbol | List
+type Value = Number | Symbol | String | List
 
 
 @dataclass
@@ -108,6 +119,8 @@ class Interpreter:
                         self.builtin_div()
                     case _:
                         raise LionError(f"Error: undefined symbol '{value}'")
+            case String():
+                self.values.append(value)
             case List():
                 self.values.append(value)
 
@@ -138,9 +151,33 @@ class Interpreter:
             self.interpret_code(f.read())
 
     def interpret_code(self, code: str):
-        tokens = list(
-            filter(None, code.replace("[", " [ ").replace("]", " ] ").split())
-        )
+        tokens: list[str] = []
+
+        i = 0
+        while i < len(code):
+            char = code[i]
+            if char.isspace():
+                i += 1
+            elif char in "[]":
+                tokens.append(char)
+                i += 1
+            elif char == '"':
+                start = i
+                i += 1
+                while i < len(code):
+                    if code[i] == '"' and (i == 0 or code[i - 1] != "\\"):
+                        i += 1
+                        break
+                    i += 1
+                else:
+                    raise LionError("Error: unterminated string literal")
+                tokens.append(code[start:i])
+            else:
+                start = i
+                while i < len(code) and not code[i].isspace() and code[i] not in '[]"':
+                    i += 1
+                tokens.append(code[start:i])
+
         stack = [List([])]
         for token in tokens:
             if token == "[":
@@ -150,13 +187,13 @@ class Interpreter:
                     raise LionError("Error: extra closing parenthesis")
                 closed = stack.pop()
                 stack[-1].append(List(closed))
-            elif (
-                token[0].isdigit()
-                or token[0] == "-"
-                and len(token) > 1
-                and token[1].isdigit()
+            elif token[0].isdigit() or (
+                token[0] == "-" and len(token) > 1 and token[1].isdigit()
             ):
                 stack[-1].append(Number(float(token)))
+            elif token.startswith('"') and token.endswith('"'):
+                string_content = token[1:-1].replace('\\"', '"').replace("\\\\", "\\")
+                stack[-1].append(String(string_content))
             else:
                 stack[-1].append(Symbol(token))
 
@@ -211,7 +248,11 @@ class Interpreter:
 
     @requires_args(1)
     def builtin_print(self):
-        print(self.values.pop())
+        value = self.values.pop()
+        if isinstance(value, String):
+            print(value.value)
+        else:
+            print(value)
 
     @requires_args(0)
     def builtin_exit(self):
@@ -225,6 +266,8 @@ class Interpreter:
             self.values.append(Number(arg1 + arg2))
         elif isinstance(arg1, Symbol) and isinstance(arg2, Symbol):
             self.values.append(Symbol(arg1 + arg2))
+        elif isinstance(arg1, String) and isinstance(arg2, String):
+            self.values.append(String(arg1.value + arg2.value))
         elif isinstance(arg1, List) and isinstance(arg2, List):
             self.values.append(List(arg1 + arg2))
         else:
