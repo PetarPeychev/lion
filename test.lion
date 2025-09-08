@@ -26,5 +26,20 @@ x y + print
 2 3 4 bunch_of_math
 3 4 5 bunch_of_math
 
+"" print
+
 print_values
+
+"" print
+
 print_environments
+
+"" print
+
+[say_hello] [
+    [name] defm
+
+    "Hello " name "!" + + print
+] def
+
+"Robyn" say_hello
