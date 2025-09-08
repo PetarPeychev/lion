@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from dataclasses import dataclass, field
+from functools import reduce
 from typing import Any, Callable, cast
 
 
@@ -80,8 +82,20 @@ class Interpreter:
                         self.builtin_eval()
                     case "def":
                         self.builtin_def()
+                    case "defm":
+                        self.builtin_defm()
+                    case "dup":
+                        self.builtin_dup()
                     case "print":
                         self.builtin_print()
+                    case "print_values":
+                        print("|", " | ".join(map(str, self.values)), "|")
+                    case "print_environments":
+                        bindings: dict[str, Value] = {}
+                        for env in self.environments:
+                            bindings.update(env.bindings)
+                        for key, value in bindings.items():
+                            print(key, "=", value)
                     case "exit":
                         self.builtin_exit()
                     case "+":
@@ -105,6 +119,53 @@ class Interpreter:
         self.values = self.saved_values
         self.environments = self.saved_environments
 
+    def repl(self):
+        while True:
+            print("> ", end="")
+            self.save()
+            try:
+                self.interpret_code(input())
+
+                if self.values:
+                    print("|", " | ".join(map(str, self.values)), "|")
+            except LionError as ex:
+                print(ex)
+                self.restore()
+                continue
+
+    def load(self, filename: str):
+        with open(filename, "r") as f:
+            self.interpret_code(f.read())
+
+    def interpret_code(self, code: str):
+        tokens = list(
+            filter(None, code.replace("[", " [ ").replace("]", " ] ").split())
+        )
+        stack = [List([])]
+        for token in tokens:
+            if token == "[":
+                stack.append(List([]))
+            elif token == "]":
+                if len(stack) == 1:
+                    raise LionError("Error: extra closing parenthesis")
+                closed = stack.pop()
+                stack[-1].append(List(closed))
+            elif (
+                token[0].isdigit()
+                or token[0] == "-"
+                and len(token) > 1
+                and token[1].isdigit()
+            ):
+                stack[-1].append(Number(float(token)))
+            else:
+                stack[-1].append(Symbol(token))
+
+        if len(stack) != 1:
+            raise LionError("Error: unclosed parenthesis")
+
+        for value in stack.pop():
+            self.interpret(value)
+
     @requires_args(1)
     def builtin_eval(self):
         arg = self.values.pop()
@@ -127,6 +188,26 @@ class Interpreter:
             raise LionError(
                 "Error: first argument to 'def' must be a symbol wrapped in a list"
             )
+
+    @requires_args(1)
+    def builtin_defm(self):
+        arg = self.values.pop()
+        if not isinstance(arg, List):
+            raise LionError("Error: last argument to 'defm' must be a list")
+        if not (all(isinstance(x, Symbol) for x in arg)):
+            raise LionError("Error: last argument to 'defm' must be a list of symbols")
+        if not len(self.values) >= len(arg):
+            raise LionError(
+                "Error: not enough arguments to 'defm', expected " + str(len(arg))
+            )
+        for symbol in reversed(arg):
+            self.environments[-1].bindings[cast(Symbol, symbol)] = self.values.pop()
+
+    @requires_args(1)
+    def builtin_dup(self):
+        arg = self.values.pop()
+        self.values.append(arg)
+        self.values.append(arg)
 
     @requires_args(1)
     def builtin_print(self):
@@ -179,47 +260,14 @@ class Interpreter:
 
 def main():
     interpreter = Interpreter()
-    while True:
-        print("> ", end="")
-        interpreter.save()
-        try:
-            tokens = list(
-                filter(None, input().replace("[", " [ ").replace("]", " ] ").split())
-            )
-            stack = [List([])]
-            for token in tokens:
-                if token == "[":
-                    stack.append(List([]))
-                elif token == "]":
-                    if len(stack) == 1:
-                        raise LionError("Error: extra closing parenthesis")
-                    closed = stack.pop()
-                    stack[-1].append(List(closed))
-                elif (
-                    token[0].isdigit()
-                    or token[0] == "-"
-                    and len(token) > 1
-                    and token[1].isdigit()
-                ):
-                    stack[-1].append(Number(float(token)))
-                else:
-                    stack[-1].append(Symbol(token))
 
-            if len(stack) != 1:
-                raise LionError("Error: unclosed parenthesis")
-
-            for value in stack.pop():
-                interpreter.interpret(value)
-
-            if interpreter.values:
-                print("|", " | ".join(map(str, interpreter.values)), "|")
-
-            # if interpreter.environments:
-            #     print(interpreter.environments)
-        except LionError as ex:
-            print(ex)
-            interpreter.restore()
-            continue
+    if len(sys.argv) == 1:
+        interpreter.repl()
+    elif len(sys.argv) == 2:
+        interpreter.load(sys.argv[1])
+    else:
+        print("Usage: lion [file]")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

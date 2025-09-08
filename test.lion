@@ -1,0 +1,30 @@
+[x] 18 def
+
+[y] 24 def
+
+x y + print
+
+[add3] [
+    3 +
+] def
+
+[pow2] [
+    [x] defm
+    x x *
+] def
+
+3 add3 pow2 print
+
+[bunch_of_math] [
+    [x y z] defm
+    z z *
+    y +
+    x x x + + +
+] def
+
+1 2 3 bunch_of_math
+2 3 4 bunch_of_math
+3 4 5 bunch_of_math
+
+print_values
+print_environments
