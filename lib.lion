@@ -1,12 +1,21 @@
 [dup] 
-(Duplicate the top value on the stack.) [
+(x -> x x) [
     [x] defm
     x x
 ] def
 
 [swap] 
-(Swap the top two values on the stack.) [
+(x y -> y x) [
     [x y] defm
     y x
 ] def
 
+[drop]
+(x -> ) [
+    [x] defm
+] def
+
+[bind]
+([x] y -> ) [
+    wrap def
+] def

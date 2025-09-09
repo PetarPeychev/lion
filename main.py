@@ -99,6 +99,8 @@ class Interpreter:
                         self.builtin_def()
                     case "defm":
                         self.builtin_defm()
+                    case "wrap":
+                        self.builtin_wrap()
                     case "print":
                         self.builtin_print()
                     case "print_values":
@@ -151,13 +153,13 @@ class Interpreter:
         while True:
             self.save()
             try:
-                self.interpret_code(input("> "))
+                self.interpret_code(input(">>> "))
             except LionError as ex:
                 print(ex)
                 self.restore()
                 continue
             if self.values:
-                print("|", " | ".join(map(str, self.values)), "|")
+                print(" ".join(map(str, self.values)))
 
     def load(self, filename: str):
         with open(filename, "r") as f:
@@ -270,6 +272,11 @@ class Interpreter:
             )
         for symbol in reversed(arg):
             self.environments[-1].bindings[cast(Symbol, symbol)] = self.values.pop()
+
+    @requires_args(1)
+    def builtin_wrap(self):
+        arg = self.values.pop()
+        self.values.append(List([arg]))
 
     @requires_args(1)
     def builtin_print(self):

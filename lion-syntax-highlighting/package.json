@@ -1,0 +1,38 @@
+{
+  "name": "lion-syntax-highlighting",
+  "displayName": "Lion Syntax Highlighting",
+  "description": "Syntax highlighting for the lion language.",
+  "publisher": "lion",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PetarPeychev/lion"
+  },
+  "version": "1.0.4",
+  "engines": {
+    "vscode": "^1.64.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "lion",
+        "aliases": [
+          "lion"
+        ],
+        "extensions": [
+          ".lion"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "lion",
+        "scopeName": "source.lion",
+        "path": "./syntaxes/lion.tmLanguage.json"
+      }
+    ]
+  }
+}
