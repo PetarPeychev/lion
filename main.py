@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import atexit
+import os
+import readline
 import sys
 from copy import deepcopy
 from dataclasses import dataclass, field
-from functools import reduce
 from typing import Any, Callable, cast
 
 
@@ -91,12 +93,12 @@ class Interpreter:
                 match value:
                     case "eval":
                         self.builtin_eval()
+                    case "load":
+                        self.builtin_load()
                     case "def":
                         self.builtin_def()
                     case "defm":
                         self.builtin_defm()
-                    case "dup":
-                        self.builtin_dup()
                     case "print":
                         self.builtin_print()
                     case "print_values":
@@ -133,18 +135,29 @@ class Interpreter:
         self.environments = self.saved_environments
 
     def repl(self):
+        history_file = os.path.expanduser("~/.lion_history")
+        readline.set_history_length(1000)
+
+        try:
+            readline.read_history_file(history_file)
+        except FileNotFoundError:
+            pass
+
+        def save_history():
+            readline.write_history_file(history_file)
+
+        atexit.register(save_history)
+
         while True:
-            print("> ", end="")
             self.save()
             try:
-                self.interpret_code(input())
-
-                if self.values:
-                    print("|", " | ".join(map(str, self.values)), "|")
+                self.interpret_code(input("> "))
             except LionError as ex:
                 print(ex)
                 self.restore()
                 continue
+            if self.values:
+                print("|", " | ".join(map(str, self.values)), "|")
 
     def load(self, filename: str):
         with open(filename, "r") as f:
@@ -172,6 +185,16 @@ class Interpreter:
                 else:
                     raise LionError("Error: unterminated string literal")
                 tokens.append(code[start:i])
+            elif char == "(":
+                start = i
+                i += 1
+                while i < len(code):
+                    if code[i] == ")":
+                        i += 1
+                        break
+                    i += 1
+                else:
+                    raise LionError("Error: unterminated comment")
             else:
                 start = i
                 while i < len(code) and not code[i].isspace() and code[i] not in '[]"':
@@ -215,6 +238,14 @@ class Interpreter:
             case _:
                 self.interpret(arg)
 
+    @requires_args(1)
+    def builtin_load(self):
+        arg = self.values.pop()
+        if isinstance(arg, String):
+            self.load(arg.value)
+        else:
+            raise LionError("Error: first argument to 'load' must be a string")
+
     @requires_args(2)
     def builtin_def(self):
         arg2 = self.values.pop()
@@ -239,12 +270,6 @@ class Interpreter:
             )
         for symbol in reversed(arg):
             self.environments[-1].bindings[cast(Symbol, symbol)] = self.values.pop()
-
-    @requires_args(1)
-    def builtin_dup(self):
-        arg = self.values.pop()
-        self.values.append(arg)
-        self.values.append(arg)
 
     @requires_args(1)
     def builtin_print(self):

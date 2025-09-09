@@ -28,14 +28,6 @@ x y + print
 
 "" print
 
-print_values
-
-"" print
-
-print_environments
-
-"" print
-
 [say_hello] [
     [name] defm
 
@@ -43,3 +35,18 @@ print_environments
 ] def
 
 "Robyn" say_hello
+
+[dup] [
+    [x] defm
+    x x
+] def
+
+5 dup
+
+"" print
+
+print_values
+
+"" print
+
+print_environments
