@@ -2,8 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/peterh/liner"
 )
 
 type Value interface {
@@ -154,8 +160,64 @@ func Parse(code string) Quote {
 	return Quote{Values: result}
 }
 
+func Eval(stack []Value, quote Quote) []Value {
+	for _, v := range quote.Values {
+		switch v := v.(type) {
+		case Quote:
+			stack = append(stack, Quote{Values: v.Values})
+		case Number:
+			stack = append(stack, Number{Value: v.Value})
+		case Boolean:
+			stack = append(stack, Boolean{Value: v.Value})
+		case String:
+			stack = append(stack, String{Value: v.Value})
+		case Symbol:
+			stack = append(stack, Symbol{Value: v.Value})
+		}
+	}
+	return stack
+}
+
 func main() {
-	code := "(this is a comment) true false [1 2 3 [4 5 6]] \"hello world\" 69.420"
-	quote := Parse(code)
-	fmt.Println(quote)
+	line := liner.NewLiner()
+	defer line.Close()
+
+	line.SetCtrlCAborts(true)
+
+	historyFile := filepath.Join(os.TempDir(), ".liner_example_history")
+	if f, err := os.Open(historyFile); err == nil {
+		line.ReadHistory(f)
+		f.Close()
+	}
+
+	var stack []Value
+	for {
+		if input, err := line.Prompt("> "); err == nil {
+			input = strings.TrimSpace(input)
+
+			if input == "quit" {
+				break
+			}
+
+			line.AppendHistory(input)
+
+			quote := Parse(input)
+			stack = Eval(stack, quote)
+			fmt.Println(stack)
+		} else if err == liner.ErrPromptAborted {
+			break
+		} else if err == io.EOF {
+			break
+		} else {
+			log.Print("Error reading line: ", err)
+			break
+		}
+	}
+
+	if f, err := os.Create(historyFile); err != nil {
+		log.Print("Error writing history file: ", err)
+	} else {
+		line.WriteHistory(f)
+		f.Close()
+	}
 }
