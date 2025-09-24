@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -61,13 +62,100 @@ func (q Quote) String() string {
 	return sb.String()
 }
 
+func Parse(code string) Quote {
+	var result []Value
+	i := 0
+
+	for i < len(code) {
+		for i < len(code) && (code[i] == ' ' || code[i] == '\t' || code[i] == '\n' || code[i] == '\r') {
+			i++
+		}
+
+		if i >= len(code) {
+			break
+		}
+
+		if code[i] == '(' {
+			depth := 1
+			i++
+			for i < len(code) && depth > 0 {
+				switch code[i] {
+				case '(':
+					depth++
+				case ')':
+					depth--
+				}
+				i++
+			}
+			continue
+		}
+
+		if code[i] == '"' {
+			i++
+			start := i
+			for i < len(code) && code[i] != '"' {
+				if code[i] == '\\' {
+					i += 2
+				} else {
+					i++
+				}
+			}
+			result = append(result, String{Value: code[start:i]})
+			i++
+			continue
+		}
+
+		if code[i] == '[' {
+			i++
+			start := i
+			depth := 1
+			for i < len(code) && depth > 0 {
+				switch code[i] {
+				case '[':
+					depth++
+				case ']':
+					depth--
+				}
+				i++
+			}
+			nestedQuote := Parse(code[start : i-1])
+			result = append(result, nestedQuote)
+			continue
+		}
+
+		start := i
+		for i < len(code) && code[i] != ' ' && code[i] != '\t' && code[i] != '\n' && code[i] != '\r' &&
+			code[i] != '(' && code[i] != ')' && code[i] != '[' && code[i] != ']' && code[i] != '"' {
+			i++
+		}
+
+		token := code[start:i]
+		if token == "" {
+			continue
+		}
+
+		if num, err := strconv.ParseFloat(token, 64); err == nil {
+			result = append(result, Number{Value: num})
+			continue
+		}
+
+		if token == "true" {
+			result = append(result, Boolean{Value: true})
+			continue
+		}
+		if token == "false" {
+			result = append(result, Boolean{Value: false})
+			continue
+		}
+
+		result = append(result, Symbol{Value: token})
+	}
+
+	return Quote{Values: result}
+}
+
 func main() {
-	println(Quote{[]Value{
-		Number{3.14},
-		String{"hello"},
-		Quote{[]Value{Number{1}, Number{2}, Number{3}}},
-		Boolean{true},
-		Symbol{"foo"},
-		Boolean{false},
-	}}.String())
+	code := "(this is a comment) true false [1 2 3 [4 5 6]] \"hello world\" 69.420"
+	quote := Parse(code)
+	fmt.Println(quote)
 }
