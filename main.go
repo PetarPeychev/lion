@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -68,7 +69,7 @@ func (q Quote) String() string {
 	return sb.String()
 }
 
-func Parse(code string) Quote {
+func Parse(code string) (quote Quote, err error) {
 	var result []Value
 	i := 0
 
@@ -93,7 +94,16 @@ func Parse(code string) Quote {
 				}
 				i++
 			}
+			if depth > 0 {
+				err = errors.New("unterminated quoted expression: missing closing parenthesis")
+				return
+			}
 			continue
+		}
+
+		if code[i] == ')' {
+			err = errors.New("unexpected closing parenthesis ')' without matching opening parenthesis")
+			return
 		}
 
 		if code[i] == '"' {
@@ -101,10 +111,18 @@ func Parse(code string) Quote {
 			start := i
 			for i < len(code) && code[i] != '"' {
 				if code[i] == '\\' {
+					if i+1 >= len(code) {
+						err = errors.New("unterminated string: escape sequence at end of input")
+						return
+					}
 					i += 2
 				} else {
 					i++
 				}
+			}
+			if i >= len(code) {
+				err = errors.New("unterminated string: missing closing quote")
+				return
 			}
 			result = append(result, String{Value: code[start:i]})
 			i++
@@ -124,9 +142,22 @@ func Parse(code string) Quote {
 				}
 				i++
 			}
-			nestedQuote := Parse(code[start : i-1])
+			if depth > 0 {
+				err = errors.New("unterminated quoted expression: missing closing bracket ']'")
+				return
+			}
+			var nestedQuote Quote
+			nestedQuote, err = Parse(code[start : i-1])
+			if err != nil {
+				return
+			}
 			result = append(result, nestedQuote)
 			continue
+		}
+
+		if code[i] == ']' {
+			err = errors.New("unexpected closing bracket ']' without matching opening bracket")
+			return
 		}
 
 		start := i
@@ -157,10 +188,10 @@ func Parse(code string) Quote {
 		result = append(result, Symbol{Value: token})
 	}
 
-	return Quote{Values: result}
+	return Quote{Values: result}, nil
 }
 
-func Eval(stack []Value, quote Quote) []Value {
+func Eval(stack []Value, quote Quote) ([]Value, error) {
 	for _, v := range quote.Values {
 		switch v := v.(type) {
 		case Quote:
@@ -175,7 +206,7 @@ func Eval(stack []Value, quote Quote) []Value {
 			stack = append(stack, Symbol{Value: v.Value})
 		}
 	}
-	return stack
+	return stack, nil
 }
 
 func main() {
@@ -201,8 +232,21 @@ func main() {
 
 			line.AppendHistory(input)
 
-			quote := Parse(input)
-			stack = Eval(stack, quote)
+			var quote Quote
+			quote, err = Parse(input)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+
+			var new_stack []Value
+			new_stack, err = Eval(stack, quote)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			stack = new_stack
+
 			fmt.Println(stack)
 		} else if err == liner.ErrPromptAborted {
 			break
