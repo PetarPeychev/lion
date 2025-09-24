@@ -13,6 +13,12 @@ import (
 	"github.com/peterh/liner"
 )
 
+// TODO:
+// - [ ] Add builtin functions.
+// - [ ] Add global environment and 'def/undef' builtin.
+// - [ ] Add file reading to import.
+// - [ ] Add lib.lion with some basic functions.
+
 type Value interface {
 	String() string
 }
