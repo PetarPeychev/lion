@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -72,6 +73,57 @@ func (q Quote) String() string {
 		sb.WriteString(v.String())
 	}
 	sb.WriteString("]")
+	return sb.String()
+}
+
+type Environment struct {
+	Bindings map[string]Quote
+	Parent   *Environment
+}
+
+func (e *Environment) Get(name string) (Quote, bool) {
+	if q, ok := e.Bindings[name]; ok {
+		return q, true
+	}
+	if e.Parent != nil {
+		return e.Parent.Get(name)
+	}
+	return Quote{}, false
+}
+
+func (e *Environment) Set(name string, quote Quote) {
+	e.Bindings[name] = quote
+}
+
+func (e *Environment) String() string {
+	quotes := make(map[string]Quote)
+
+	var envs []*Environment
+	current := e
+	for current != nil {
+		envs = append(envs, current)
+		current = current.Parent
+	}
+
+	for i := len(envs) - 1; i >= 0; i-- {
+		maps.Copy(quotes, envs[i].Bindings)
+	}
+
+	var sb strings.Builder
+	sb.WriteString("{")
+
+	first := true
+	for key, value := range quotes {
+		if !first {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(key)
+		sb.WriteString(": ")
+		sb.WriteString(value.String())
+		first = false
+	}
+
+	sb.WriteString("}")
 	return sb.String()
 }
 
@@ -197,7 +249,8 @@ func Parse(code string) (quote Quote, err error) {
 	return Quote{Values: result}, nil
 }
 
-func Eval(stack []Value, quote Quote) ([]Value, error) {
+// Apply evaluates a quote in the current environment.
+func Apply(stack []Value, env Environment, quote Quote) ([]Value, Environment, error) {
 	for _, v := range quote.Values {
 		switch v := v.(type) {
 		case Quote:
@@ -209,8 +262,176 @@ func Eval(stack []Value, quote Quote) ([]Value, error) {
 		case String:
 			stack = append(stack, String{Value: v.Value})
 		case Symbol:
-			stack = append(stack, Symbol{Value: v.Value})
+			quote, ok := env.Get(v.Value)
+			if !ok {
+				switch v.Value {
+				case "parse":
+					if len(stack) < 1 {
+						return nil, env, errors.New("'parse' expects at least one argument")
+					}
+					arg := stack[len(stack)-1]
+					switch arg := arg.(type) {
+					case String:
+						stack = stack[:len(stack)-1]
+						quote, err := Parse(arg.Value)
+						if err != nil {
+							return nil, env, err
+						}
+						stack = append(stack, quote)
+						return stack, env, nil
+					default:
+						return nil, env, errors.New("'parse' expects a string as its first argument")
+					}
+				case "apply":
+					if len(stack) < 1 {
+						return nil, env, errors.New("'apply' expects at least one argument")
+					}
+					arg := stack[len(stack)-1]
+					switch arg := arg.(type) {
+					case Quote:
+						var err error
+						stack = stack[:len(stack)-1]
+						stack, env, err = Apply(stack, env, arg)
+						if err != nil {
+							return nil, env, err
+						}
+						return stack, env, nil
+					default:
+						return nil, env, errors.New("'apply' expects a quoted list as its first argument")
+					}
+				case "bind":
+					if len(stack) < 2 {
+						return nil, env, errors.New("'bind' expects two arguments")
+					}
+					arg1 := stack[len(stack)-2]
+					arg2 := stack[len(stack)-1]
+					stack = stack[:len(stack)-2]
+
+					switch arg1 := arg1.(type) {
+					case Quote:
+						switch arg2.(type) {
+						case Quote:
+							if len(arg2.(Quote).Values) != 1 {
+								return nil, env, errors.New("'bind' expects a quoted list with one element")
+							}
+							symbol_quote := arg2.(Quote).Values[0]
+							var name string
+							switch symbol_quote := symbol_quote.(type) {
+							case Symbol:
+								name = symbol_quote.Value
+							default:
+								return nil, env, errors.New("'bind' expects a quoted symbol as its second argument")
+							}
+							env.Set(name, arg1)
+							return stack, env, nil
+						default:
+							return nil, env, errors.New("'bind' expects a quoted list as its second argument")
+						}
+					default:
+						return nil, env, errors.New("'bind' expects a quoted list as its first argument")
+					}
+				case "wrap":
+					if len(stack) < 1 {
+						return nil, env, errors.New("'wrap' expects at least one argument")
+					}
+					stack[len(stack)-1] = Quote{Values: []Value{stack[len(stack)-1]}}
+					return stack, env, nil
+				case "+":
+					if len(stack) < 2 {
+						return nil, env, errors.New("'+' expects two arguments")
+					}
+					arg1 := stack[len(stack)-2]
+					arg2 := stack[len(stack)-1]
+					stack = stack[:len(stack)-2]
+					switch arg1.(type) {
+					case Number:
+						switch arg2.(type) {
+						case Number:
+							stack = append(stack, Number{Value: arg1.(Number).Value + arg2.(Number).Value})
+							return stack, env, nil
+						default:
+							return nil, env, errors.New("'+' expects a number as its second argument")
+						}
+					default:
+						return nil, env, errors.New("'+' expects a number as its first argument")
+					}
+				case "-":
+					if len(stack) < 2 {
+						return nil, env, errors.New("'-' expects two arguments")
+					}
+					arg1 := stack[len(stack)-2]
+					arg2 := stack[len(stack)-1]
+					stack = stack[:len(stack)-2]
+					switch arg1.(type) {
+					case Number:
+						switch arg2.(type) {
+						case Number:
+							stack = append(stack, Number{Value: arg1.(Number).Value - arg2.(Number).Value})
+							return stack, env, nil
+						default:
+							return nil, env, errors.New("'-' expects a number as its second argument")
+						}
+					default:
+						return nil, env, errors.New("'-' expects a number as its first argument")
+					}
+				case "*":
+					if len(stack) < 2 {
+						return nil, env, errors.New("'*' expects two arguments")
+					}
+					arg1 := stack[len(stack)-2]
+					arg2 := stack[len(stack)-1]
+					stack = stack[:len(stack)-2]
+					switch arg1.(type) {
+					case Number:
+						switch arg2.(type) {
+						case Number:
+							stack = append(stack, Number{Value: arg1.(Number).Value * arg2.(Number).Value})
+							return stack, env, nil
+						default:
+							return nil, env, errors.New("'*' expects a number as its second argument")
+						}
+					default:
+						return nil, env, errors.New("'*' expects a number as its first argument")
+					}
+				case "/":
+					if len(stack) < 2 {
+						return nil, env, errors.New("'/' expects two arguments")
+					}
+					arg1 := stack[len(stack)-2]
+					arg2 := stack[len(stack)-1]
+					stack = stack[:len(stack)-2]
+					switch arg1.(type) {
+					case Number:
+						switch arg2.(type) {
+						case Number:
+							stack = append(stack, Number{Value: arg1.(Number).Value / arg2.(Number).Value})
+							return stack, env, nil
+						default:
+							return nil, env, errors.New("'/' expects a number as its second argument")
+						}
+					default:
+						return nil, env, errors.New("'/' expects a number as its first argument")
+					}
+				}
+				return nil, Environment{}, errors.New("undefined symbol '" + v.Value + "'")
+			}
+			var err error
+			stack, env, err = Apply(stack, env, quote)
+			if err != nil {
+				return nil, env, err
+			}
 		}
+	}
+	return stack, env, nil
+}
+
+// Call evaluates a quote in a new temporary child environment.
+func Call(stack []Value, env Environment, quote Quote) ([]Value, error) {
+	new_env := Environment{Parent: &env}
+	var err error
+	stack, _, err = Apply(stack, new_env, quote)
+	if err != nil {
+		return nil, err
 	}
 	return stack, nil
 }
@@ -228,6 +449,11 @@ func main() {
 	}
 
 	var stack []Value
+	env := Environment{make(map[string]Quote), nil}
+
+	env.Bindings["pi"] = Quote{Values: []Value{Number{Value: 3.14}}}
+	env.Bindings["ints"] = Quote{Values: []Value{Quote{Values: []Value{Number{Value: 1}, Number{Value: 2}, Number{Value: 3}}}}}
+
 	for {
 		if input, err := line.Prompt("> "); err == nil {
 			input = strings.TrimSpace(input)
@@ -246,12 +472,14 @@ func main() {
 			}
 
 			var new_stack []Value
-			new_stack, err = Eval(stack, quote)
+			var new_env Environment
+			new_stack, new_env, err = Apply(stack, Environment{maps.Clone(env.Bindings), env.Parent}, quote)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
 			stack = new_stack
+			env = new_env
 
 			fmt.Println(stack)
 		} else if err == liner.ErrPromptAborted {
