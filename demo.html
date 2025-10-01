@@ -62,6 +62,11 @@
             font-weight: bold;
         }
 
+        .binding-docstring {
+            color: #ccc;
+            margin-top: 0.25rem;
+        }
+
         .sidebar-left {
             width: 20%;
             border-right: 1px solid #444;
@@ -174,9 +179,15 @@
         </main>
 
         <aside class="sidebar sidebar-right">
-            <div class="binding"><span class="binding-name">pi:</span> 3.1415</div>
+            <div class="binding">
+                <div><span class="binding-name">pi:</span> 3.1415</div>
+                <div class="binding-docstring">( -> n)</div>
+            </div>
             <div class="binding"><span class="binding-name">ints:</span> [1 2 3]</div>
-            <div class="binding"><span class="binding-name">square:</span> [[dup *] apply]</div>
+            <div class="binding">
+                <div><span class="binding-name">square:</span> [[dup *] apply]</div>
+                <div class="binding-docstring">(n -> n^2)</div>
+            </div>
         </aside>
     </div>
 </body>
