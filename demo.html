@@ -62,11 +62,6 @@
             font-weight: bold;
         }
 
-        .binding-docstring {
-            color: #ccc;
-            margin-top: 0.25rem;
-        }
-
         .sidebar-left {
             width: 20%;
             border-right: 1px solid #444;
@@ -93,11 +88,41 @@
             border: 1px solid #444;
             font-family: 'Courier New', monospace;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-menu {
+            background-color: #2a2a2a;
+            border-bottom: 1px solid #444;
+            padding: 0.3rem 0.5rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        .editor-menu button {
+            background-color: #3a3a3a;
+            color: #d4d4d4;
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 16px;
+            display: inline-block;
+        }
+
+        .editor-menu button:hover {
+            background-color: #4a4a4a;
+        }
+
+        .editor-menu button:active {
+            background-color: #555;
         }
 
         .editor textarea {
             width: 100%;
-            height: 100%;
+            flex: 1;
             background-color: #1e1e1e;
             color: #d4d4d4;
             border: none;
@@ -157,15 +182,13 @@
 
     <div class="container">
         <aside class="sidebar sidebar-left">
-            <div class="stack-item">[1 2 3]</div>
-            <div class="stack-item">"hello"</div>
-            <div class="stack-item">42</div>
-            <div class="stack-item">true</div>
-            <div class="stack-item">3.14</div>
         </aside>
 
         <main class="main">
             <div class="editor">
+                <div class="editor-menu">
+                    <button id="run-btn" title="Clear state and run code.">▶</button>
+                </div>
                 <textarea></textarea>
             </div>
 
@@ -179,16 +202,208 @@
         </main>
 
         <aside class="sidebar sidebar-right">
-            <div class="binding">
-                <div><span class="binding-name">pi:</span> 3.1415</div>
-                <div class="binding-docstring">( -> n)</div>
-            </div>
-            <div class="binding"><span class="binding-name">ints:</span> [1 2 3]</div>
-            <div class="binding">
-                <div><span class="binding-name">square:</span> [[dup *] apply]</div>
-                <div class="binding-docstring">(n -> n^2)</div>
-            </div>
         </aside>
     </div>
+
+    <script>
+        class Symbol {
+            constructor(name) {
+                this.name = name;
+            }
+        }
+
+        const stack = [];
+        const envStack = [{}];
+
+        function valueToString(value) {
+            if (value instanceof Symbol) {
+                return value.name;
+            } else if (typeof value === 'string') {
+                return `"${value}"`;
+            } else if (typeof value === 'boolean') {
+                return value ? 'true' : 'false';
+            } else if (typeof value === 'number') {
+                return String(value);
+            } else if (Array.isArray(value)) {
+                return `[${value.map(valueToString).join(' ')}]`;
+            }
+            return String(value);
+        }
+
+        function pushValue(value) {
+            stack.push(value);
+            const stackList = document.querySelector('.sidebar-left');
+            const stackItem = document.createElement('div');
+            stackItem.className = 'stack-item';
+            stackItem.textContent = valueToString(value);
+            stackList.insertBefore(stackItem, stackList.firstChild);
+        }
+
+        function bindName(name, value) {
+            const topEnv = envStack[envStack.length - 1];
+            topEnv[name] = value;
+            const bindingsList = document.querySelector('.sidebar-right');
+            const binding = document.createElement('div');
+            binding.className = 'binding';
+            const nameDiv = document.createElement('div');
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'binding-name';
+            nameSpan.textContent = name;
+            nameDiv.appendChild(nameSpan);
+            const valueDiv = document.createElement('div');
+            valueDiv.textContent = valueToString(value);
+            binding.appendChild(nameDiv);
+            binding.appendChild(valueDiv);
+            bindingsList.insertBefore(binding, bindingsList.firstChild);
+        }
+
+        function clearAndRun() {
+            stack.length = 0;
+            document.querySelector('.sidebar-left').innerHTML = '';
+
+            envStack.length = 0;
+            envStack.push({});
+            document.querySelector('.sidebar-right').innerHTML = '';
+        }
+
+        document.getElementById('run-btn').addEventListener('click', clearAndRun);
+
+        pushValue(3.14);
+        pushValue(42);
+        pushValue([1, 2, 3, ["hello", true]]);
+        pushValue('world');
+
+        bindName('square', [[new Symbol('dup'), new Symbol('*')], new Symbol('apply')]);
+        bindName('ints', [1, 2, 3]);
+        bindName('pi', [3.14]);
+
+        function parse(code) {
+            const result = [];
+            let i = 0;
+
+            while (i < code.length) {
+                while (i < code.length && (code[i] === ' ' || code[i] === '\t' || code[i] === '\n' || code[i] === '\r')) {
+                    i++;
+                }
+
+                if (i >= code.length) break;
+
+                if (code[i] === '(') {
+                    let depth = 1;
+                    i++;
+                    while (i < code.length && depth > 0) {
+                        if (code[i] === '(') depth++;
+                        if (code[i] === ')') depth--;
+                        i++;
+                    }
+                    if (depth > 0) throw new Error('unterminated quoted expression: missing closing parenthesis');
+                    continue;
+                }
+
+                if (code[i] === ')') {
+                    throw new Error("unexpected closing parenthesis ')' without matching opening parenthesis");
+                }
+
+                if (code[i] === '"') {
+                    i++;
+                    const start = i;
+                    while (i < code.length && code[i] !== '"') {
+                        if (code[i] === '\\') {
+                            if (i + 1 >= code.length) {
+                                throw new Error('unterminated string: escape sequence at end of input');
+                            }
+                            i += 2;
+                        } else {
+                            i++;
+                        }
+                    }
+                    if (i >= code.length) throw new Error('unterminated string: missing closing quote');
+                    result.push(code.substring(start, i));
+                    i++;
+                    continue;
+                }
+
+                if (code[i] === '[') {
+                    i++;
+                    const start = i;
+                    let depth = 1;
+                    while (i < code.length && depth > 0) {
+                        if (code[i] === '[') depth++;
+                        if (code[i] === ']') depth--;
+                        i++;
+                    }
+                    if (depth > 0) throw new Error("unterminated quoted expression: missing closing bracket ']'");
+                    result.push(parse(code.substring(start, i - 1)));
+                    continue;
+                }
+
+                if (code[i] === ']') {
+                    throw new Error("unexpected closing bracket ']' without matching opening bracket");
+                }
+
+                const start = i;
+                while (i < code.length && code[i] !== ' ' && code[i] !== '\t' && code[i] !== '\n' && code[i] !== '\r' &&
+                       code[i] !== '(' && code[i] !== ')' && code[i] !== '[' && code[i] !== ']' && code[i] !== '"') {
+                    i++;
+                }
+
+                const token = code.substring(start, i);
+                if (token === '') continue;
+
+                const num = parseFloat(token);
+                if (!isNaN(num)) {
+                    result.push(num);
+                    continue;
+                }
+
+                if (token === 'true') {
+                    result.push(true);
+                    continue;
+                }
+                if (token === 'false') {
+                    result.push(false);
+                    continue;
+                }
+
+                result.push(new Symbol(token));
+            }
+
+            return result;
+        }
+
+        function apply(values) {
+            for (const v of values) {
+                if (Array.isArray(v)) {
+                    pushValue(v);
+                } else if (typeof v === 'number') {
+                    pushValue(v);
+                } else if (typeof v === 'boolean') {
+                    pushValue(v);
+                } else if (typeof v === 'string') {
+                    pushValue(v);
+                } else if (v instanceof Symbol) {
+                    let found = false;
+                    for (let i = envStack.length - 1; i >= 0; i--) {
+                        if (v.name in envStack[i]) {
+                            const value = envStack[i][v.name];
+                            if (typeof value === 'function') {
+                                value();
+                            } else {
+                                apply(value);
+                            }
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        throw new Error(`undefined symbol '${v.name}'`);
+                    }
+                }
+            }
+        }
+
+        apply(parse("1 2 3 [4 5 6] pi"));
+
+    </script>
 </body>
 </html>
