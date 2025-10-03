@@ -212,6 +212,10 @@
             }
         }
 
+        function s(name) {
+            return new Symbol(name);
+        }
+
         const stack = [];
         const envStack = [{}];
 
@@ -230,13 +234,20 @@
             return String(value);
         }
 
-        function pushValue(value) {
+        function push(value) {
             stack.push(value);
             const stackList = document.querySelector('.sidebar-left');
             const stackItem = document.createElement('div');
             stackItem.className = 'stack-item';
             stackItem.textContent = valueToString(value);
             stackList.insertBefore(stackItem, stackList.firstChild);
+        }
+
+        function pop() {
+            const value = stack.pop();
+            const stackList = document.querySelector('.sidebar-left');
+            if (stackList.firstChild) stackList.removeChild(stackList.firstChild);
+            return value;
         }
 
         function bindName(name, value) {
@@ -251,7 +262,11 @@
             nameSpan.textContent = name;
             nameDiv.appendChild(nameSpan);
             const valueDiv = document.createElement('div');
-            valueDiv.textContent = valueToString(value);
+            if (value instanceof Function) {
+                valueDiv.textContent = value.description;
+            } else {
+                valueDiv.textContent = value.map(valueToString).join(' ');
+            }
             binding.appendChild(nameDiv);
             binding.appendChild(valueDiv);
             bindingsList.insertBefore(binding, bindingsList.firstChild);
@@ -264,18 +279,13 @@
             envStack.length = 0;
             envStack.push({});
             document.querySelector('.sidebar-right').innerHTML = '';
+
+            document.querySelector('.repl-history').innerHTML = '';
+
+            addBuiltins();
         }
 
         document.getElementById('run-btn').addEventListener('click', clearAndRun);
-
-        pushValue(3.14);
-        pushValue(42);
-        pushValue([1, 2, 3, ["hello", true]]);
-        pushValue('world');
-
-        bindName('square', [[new Symbol('dup'), new Symbol('*')], new Symbol('apply')]);
-        bindName('ints', [1, 2, 3]);
-        bindName('pi', [3.14]);
 
         function parse(code) {
             const result = [];
@@ -374,13 +384,13 @@
         function apply(values) {
             for (const v of values) {
                 if (Array.isArray(v)) {
-                    pushValue(v);
+                    push(v);
                 } else if (typeof v === 'number') {
-                    pushValue(v);
+                    push(v);
                 } else if (typeof v === 'boolean') {
-                    pushValue(v);
+                    push(v);
                 } else if (typeof v === 'string') {
-                    pushValue(v);
+                    push(v);
                 } else if (v instanceof Symbol) {
                     let found = false;
                     for (let i = envStack.length - 1; i >= 0; i--) {
@@ -389,7 +399,13 @@
                             if (typeof value === 'function') {
                                 value();
                             } else {
-                                apply(value);
+                                value.map(v => {
+                                    if (Array.isArray(v)) {
+                                        apply(v);
+                                    } else {
+                                        apply([v]);
+                                    }
+                                });
                             }
                             found = true;
                             break;
@@ -402,7 +418,93 @@
             }
         }
 
-        apply(parse("1 2 3 [4 5 6] pi"));
+        function call(quote) {
+            const bindingsList = document.querySelector('.sidebar-right');
+            const initialBindingsCount = bindingsList.children.length;
+            envStack.push({});
+            apply(quote);
+            envStack.pop();
+            while (bindingsList.children.length > initialBindingsCount) {
+                bindingsList.removeChild(bindingsList.firstChild);
+            }
+        }
+
+        function annotate(f, description) {
+            f.description = description;
+            return f;
+        }
+
+        function addBuiltins() {
+            bindName('apply', annotate(() => apply(pop()), 'apply a quote to the current environment'));
+            bindName('call', annotate(() => call(pop()), 'call a quote in a new environment'));
+            bindName('parse', annotate(() => push(parse(pop())), 'parse a lion string to a quote'));
+            bindName('bind', annotate(() => {
+                const names = pop();
+                for (let i = names.length - 1; i >= 0; i--) {
+                    const name = names[i];
+                    if (!(name instanceof Symbol)) {
+                        throw new Error('Error: first argument to \'bind\' must be a quote of symbols');
+                    }
+                    bindName(name.name, [pop()]);
+                }
+            }, 'bind the top values on the stack to a quote of names'));
+            bindName('swap', [[[[s('x'), s('y')], s('bind'), s('y'), s('x')]], s('call')]);
+            bindName('dup', [[[[s('x')], s('bind'), s('x'), s('x')]], s('call')]);
+            bindName('drop', [[[[s('x')], s('bind')]], s('call')]);
+            bindName('+', annotate(() => {
+                const q1 = pop();
+                const q2 = pop();
+                if (Array.isArray(q1) && Array.isArray(q2)) {
+                    push([...q2, ...q1]);
+                } else if (typeof q1 === 'string' && typeof q2 === 'string') {
+                    push(q2 + q1);
+                } else if (typeof q1 === 'number' && typeof q2 === 'number') {
+                    push(q2 + q1);
+                }
+            }, 'add two numbers or concatenate two quotes/strings'));
+        }
+
+        document.querySelector('.repl-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const input = e.target.value;
+                if (input.trim()) {
+                    const history = document.querySelector('.repl-history');
+                    const entry = document.createElement('div');
+                    entry.textContent = '> ' + input;
+                    history.appendChild(entry);
+
+                    const stackCopy = [...stack];
+                    const envStackCopy = envStack.map(env => ({...env}));
+
+                    try {
+                        apply(parse(input));
+                    } catch (err) {
+                        const errorEntry = document.createElement('div');
+                        errorEntry.textContent = err.message;
+                        errorEntry.style.color = '#ff6b6b';
+                        history.appendChild(errorEntry);
+
+                        stack.length = 0;
+                        stack.push(...stackCopy);
+                        envStack.length = 0;
+                        envStack.push(...envStackCopy);
+
+                        document.querySelector('.sidebar-left').innerHTML = '';
+                        for (let i = stackCopy.length - 1; i >= 0; i--) {
+                            const stackItem = document.createElement('div');
+                            stackItem.className = 'stack-item';
+                            stackItem.textContent = valueToString(stackCopy[i]);
+                            document.querySelector('.sidebar-left').appendChild(stackItem);
+                        }
+                    }
+
+                    e.target.value = '';
+                    history.scrollTop = history.scrollHeight;
+                }
+            }
+        });
+
+        addBuiltins();
 
     </script>
 </body>
