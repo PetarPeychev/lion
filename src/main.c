@@ -10,19 +10,44 @@ void print_usage(char *program_name) {
     fprintf(stderr, "    run [FILE] - Run a lion program.\n");
 }
 
-int run(char *file_name) {
-    FILE *file = fopen(file_name, "r");
+char *read_file(char *path) {
+    FILE *file = fopen(path, "r");
     if (file == NULL) {
-        fprintf(stderr, "Failed to open file.\n");
+        return NULL;
+    }
+    fseek(file, 0, SEEK_END);
+    long position = ftell(file);
+    if (position < 0) {
+        fprintf(stderr, "Could not read file '%s'\n", path);
+        fclose(file);
+        return NULL;
+    }
+    size_t length = (size_t)position;
+    rewind(file);
+
+    char *buffer = malloc(length + 1);
+    if (!buffer) {
+        fprintf(stderr, "Not enough memory to read '%s'\n", path);
+        fclose(file);
+        return NULL;
+    }
+    fread(buffer, 1, length, file);
+    buffer[length] = '\0';
+
+    fclose(file);
+    return buffer;
+}
+
+int run(char *path) {
+    char *source = read_file(path);
+    if (source == NULL) {
+        fprintf(stderr, "Failed to read file '%s'.\n", path);
         return EXIT_FAILURE;
     }
 
-    int c;
-    while ((c = fgetc(file)) != EOF) {
-        printf("%c", c);
-    }
+    printf("%s\n", source);
 
-    fclose(file);
+    free(source);
     return EXIT_SUCCESS;
 }
 
