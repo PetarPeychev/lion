@@ -4,9 +4,9 @@
 #include <string.h>
 
 // --- LIST ---
-List list_init(size_t capacity) {
-    List list = {
-        .items = malloc(sizeof(Value) * capacity),
+struct List list_init(size_t capacity) {
+    struct List list = {
+        .items = malloc(sizeof(struct Value) * capacity),
         .length = 0,
         .capacity = capacity
     };
@@ -14,44 +14,44 @@ List list_init(size_t capacity) {
         fprintf(
             stderr,
             "ERROR: Failed to allocate %zu bytes for list.\n",
-            sizeof(Value) * capacity
+            sizeof(struct Value) * capacity
         );
         exit(EXIT_FAILURE);
     }
     return list;
 }
 
-void list_grow(List *list, size_t capacity) {
-    list->items = realloc(list->items, sizeof(Value) * capacity);
+void list_grow(struct List *list, size_t capacity) {
+    list->items = realloc(list->items, sizeof(struct Value) * capacity);
     list->capacity = capacity;
 }
 
-void list_append(List *list, Value value) {
+void list_append(struct List *list, struct Value value) {
     if (list->length >= list->capacity) {
         list_grow(list, list->capacity * 2);
     }
     list->items[list->length++] = value;
 }
 
-void list_free(List list) {
+void list_free(struct List list) {
     free(list.items);
 }
 
 // --- STACK ---
-Stack stack_init(void) {
-    Stack stack = {.top = -1};
+struct Stack stack_init(void) {
+    struct Stack stack = {.top = -1};
     return stack;
 }
 
-bool stack_is_empty(Stack *stack) {
+bool stack_is_empty(struct Stack *stack) {
     return stack->top == -1;
 }
 
-bool stack_is_full(Stack *stack) {
+bool stack_is_full(struct Stack *stack) {
     return stack->top >= STACK_SIZE - 1;
 }
 
-bool stack_push(Stack *stack, Value value) {
+bool stack_push(struct Stack *stack, struct Value value) {
     if (stack_is_full(stack)) {
         return false;
     }
@@ -59,7 +59,7 @@ bool stack_push(Stack *stack, Value value) {
     return true;
 }
 
-bool stack_pop(Stack *stack, Value *out) {
+bool stack_pop(struct Stack *stack, struct Value *out) {
     if (stack_is_empty(stack)) {
         return false;
     }
@@ -68,8 +68,8 @@ bool stack_pop(Stack *stack, Value *out) {
 }
 
 // --- SLICE ---
-Slice slice(const char *str) {
-    Slice slice = {.data = str, .length = strlen(str)};
+struct Slice slice(const char *str) {
+    struct Slice slice = {.data = str, .length = strlen(str)};
     return slice;
 }
 
@@ -95,18 +95,23 @@ char *read_file(char *path) {
         fclose(file);
         return NULL;
     }
-    fread(buffer, 1, length, file);
+    size_t read = fread(buffer, 1, length, file);
+    if (read != length) {
+        fprintf(stderr, "ERROR: Could not read file '%s'\n", path);
+        fclose(file);
+        return NULL;
+    }
     buffer[length] = '\0';
 
     fclose(file);
     return buffer;
 }
 
-List parse(Slice code) {
-    printf("%s\n", code.data);
-    List tokens = {0};
+struct List parse(struct Slice code) {
+    printf("%.*s\n", (int)code.length, code.data);
+    struct List tokens = {0};
     return tokens;
 }
 
-void apply(List list, Stack *stack) {
+void apply(struct List list, struct Stack *stack) {
 }

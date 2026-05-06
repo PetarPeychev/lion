@@ -33,8 +33,8 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        List tokens = parse(slice(source));
-        Stack stack = stack_init();
+        struct List tokens = parse(slice(source));
+        struct Stack stack = stack_init();
         apply(tokens, &stack);
 
         free(source);

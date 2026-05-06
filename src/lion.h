@@ -4,60 +4,60 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef enum {
+enum ValueType {
     VALUE_NUMBER,
     VALUE_STRING,
     VALUE_SYMBOL,
     VALUE_LIST
-} ValueType;
+};
 
-typedef struct Value Value;
+struct Value;
 
-typedef struct {
-    Value *items;
+struct List {
+    struct Value *items;
     size_t length;
     size_t capacity;
-} List;
+};
 
-List list_init(size_t capacity);
-void list_grow(List *list, size_t capacity);
-void list_append(List *list, Value value);
-void list_free(List list);
+struct List list_init(size_t capacity);
+void list_grow(struct List *list, size_t capacity);
+void list_append(struct List *list, struct Value value);
+void list_free(struct List list);
 
-typedef union {
+union ValueData {
     double number;
     char *symbol;
     char *string;
-    List list;
-} ValueData;
+    struct List list;
+};
 
 struct Value {
-    ValueType type;
-    ValueData data;
+    enum ValueType type;
+    union ValueData data;
 };
 
 #define STACK_SIZE 256
 
-typedef struct {
-    Value items[STACK_SIZE];
+struct Stack {
+    struct Value items[STACK_SIZE];
     int top;
-} Stack;
+};
 
-Stack stack_init(void);
-bool stack_is_empty(Stack *stack);
-bool stack_is_full(Stack *stack);
-bool stack_push(Stack *stack, Value value);
-bool stack_pop(Stack *stack, Value *out);
+struct Stack stack_init(void);
+bool stack_is_empty(struct Stack *stack);
+bool stack_is_full(struct Stack *stack);
+bool stack_push(struct Stack *stack, struct Value value);
+bool stack_pop(struct Stack *stack, struct Value *out);
 
-typedef struct {
+struct Slice {
     const char *data;
     size_t length;
-} Slice;
+};
 
-Slice slice(const char *str);
+struct Slice slice(const char *str);
 
 char *read_file(char *path);
-List parse(Slice code);
-void apply(List list, Stack *stack);
+struct List parse(struct Slice code);
+void apply(struct List list, struct Stack *stack);
 
 #endif

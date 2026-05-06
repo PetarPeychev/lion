@@ -1,4 +1,4 @@
-CC       := clang
+CC       := gcc
 CFLAGS   := -std=c99 -Wall -Wextra -Wpedantic -Wshadow -Wconversion \
             -Wsign-conversion -Wnull-dereference -Wformat=2
 LDFLAGS  :=
