@@ -15,9 +15,14 @@ typedef struct Value Value;
 
 typedef struct {
     Value *items;
-    size_t count;
+    size_t length;
     size_t capacity;
 } List;
+
+List list_init(size_t capacity);
+void list_grow(List *list, size_t capacity);
+void list_append(List *list, Value value);
+void list_free(List list);
 
 typedef union {
     double number;
@@ -44,8 +49,15 @@ bool stack_is_full(Stack *stack);
 bool stack_push(Stack *stack, Value value);
 bool stack_pop(Stack *stack, Value *out);
 
+typedef struct {
+    const char *data;
+    size_t length;
+} Slice;
+
+Slice slice(const char *str);
+
 char *read_file(char *path);
-List parse(char *code);
+List parse(Slice code);
 void apply(List list, Stack *stack);
 
 #endif

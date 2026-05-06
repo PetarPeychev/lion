@@ -9,47 +9,6 @@ void print_usage(char *program_name) {
     fprintf(stderr, "    run [FILE] - Run a lion program.\n");
 }
 
-char *read_file(char *path) {
-    FILE *file = fopen(path, "r");
-    if (file == NULL) {
-        return NULL;
-    }
-    fseek(file, 0, SEEK_END);
-    long position = ftell(file);
-    if (position < 0) {
-        fprintf(stderr, "Could not read file '%s'\n", path);
-        fclose(file);
-        return NULL;
-    }
-    size_t length = (size_t)position;
-    rewind(file);
-
-    char *buffer = malloc(length + 1);
-    if (!buffer) {
-        fprintf(stderr, "Not enough memory to read '%s'\n", path);
-        fclose(file);
-        return NULL;
-    }
-    fread(buffer, 1, length, file);
-    buffer[length] = '\0';
-
-    fclose(file);
-    return buffer;
-}
-
-int run(char *path) {
-    char *source = read_file(path);
-    if (source == NULL) {
-        fprintf(stderr, "Failed to read file '%s'.\n", path);
-        return EXIT_FAILURE;
-    }
-
-    printf("%s\n", source);
-
-    free(source);
-    return EXIT_SUCCESS;
-}
-
 int main(int argc, char *argv[]) {
     char *program_name = argv[0];
 
@@ -68,7 +27,18 @@ int main(int argc, char *argv[]) {
             print_usage(program_name);
             return EXIT_FAILURE;
         }
-        return run(argv[2]);
+        char *source = read_file(argv[2]);
+        if (source == NULL) {
+            fprintf(stderr, "ERROR: Failed to read file '%s'.\n", argv[2]);
+            return EXIT_FAILURE;
+        }
+
+        List tokens = parse(slice(source));
+        Stack stack = stack_init();
+        apply(tokens, &stack);
+
+        free(source);
+        return EXIT_SUCCESS;
     } else {
         fprintf(stderr, "ERROR: Unrecognized command '%s'.\n\n", argv[1]);
         print_usage(program_name);
